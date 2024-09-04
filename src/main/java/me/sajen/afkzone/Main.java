@@ -19,7 +19,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
 import java.util.*;
 
 public final class Main extends JavaPlugin implements Listener {
@@ -47,11 +46,6 @@ public final class Main extends JavaPlugin implements Listener {
             checkRegion(player);
         }
 
-    }
-
-    @Override
-    public void onDisable() {
-        getLogger().info("AfkZone wyłączony");
     }
 
     private void afkPlayersTimer() {
