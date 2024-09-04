@@ -1,0 +1,6 @@
+name: AfkZone
+version: 1.0
+main: me.sajen.afkzone.Main
+api-version: '1.17'
+author: Sajen
+depend: [WorldGuard]
