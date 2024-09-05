@@ -10,6 +10,7 @@ afk:
     reward-give-subtitle: "&7Właśnie otrzymałeś nagrodę za przebywanie na strefie AFK"
     reward-give-actionbar: "&a&lAFK &8| &7Właśnie otrzymałeś nagrodę za przebywanie na strefie AFK"
     reward-give-message: "&a&lAFK &8| &7Właśnie otrzymałeś nagrodę za przebywanie na strefie AFK"
+    reward-time-passing: "&ezostało &6{0} &esekund do następnej nagrody"
   afk-other-things:
     # Nazwa regionu Strefy AFK
     afk-region: afk

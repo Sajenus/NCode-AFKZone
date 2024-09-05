@@ -8,9 +8,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,6 +21,12 @@ import java.util.*;
 
 public final class Main extends JavaPlugin implements Listener {
 
+    private static Main plugin;
+
+    public static Main getPlugin() {
+        return plugin;
+    }
+
     Map<UUID, Long> afkPlayers = new HashMap<>();
 
     String messageType;
@@ -30,13 +34,18 @@ public final class Main extends JavaPlugin implements Listener {
     String rewardSubtitle;
     String rewardActionBar;
     String rewardMessage;
+    String rewardTimePassing;
     String afkRegion;
     long rewardTime;
     List<String> commandRewards;
 
     @Override
     public void onEnable() {
+        plugin = this;
+
         getServer().getPluginManager().registerEvents(this, this);
+        getCommand("afkzone").setExecutor(new ReloadCmd());
+        getCommand("afkzone").setTabCompleter(new ReloadCmd());
         saveDefaultConfig();
 
         reload();
@@ -60,11 +69,12 @@ public final class Main extends JavaPlugin implements Listener {
 
                     long secondsRemain = (data.getValue() - System.currentTimeMillis()) / 1000;
                     if (secondsRemain > 0) {
-                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(secondsRemain + " second(s) remain until penalty"));
+                        // DODAJ COLOR CODE
+                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(format(rewardTimePassing.replace("{0}", String.valueOf(secondsRemain)))));
                     } else {
                         for(String command : commandRewards) {
                             command = command.replace("{PLAYER}", player.getName());
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                            runCommand(command, player.getWorld());
                         }
                         switch (messageType) {
                             case "title":
@@ -78,7 +88,6 @@ public final class Main extends JavaPlugin implements Listener {
                                 break;
                         }
                         data.setValue(System.currentTimeMillis() + rewardTime * 1000);
-                        reload();
                     }
 
                     if (player.isDead()) {
@@ -91,30 +100,34 @@ public final class Main extends JavaPlugin implements Listener {
         }.runTaskTimer(this, 20L, 20L);
     }
 
+    private void runCommand(String command, World world) {
+        boolean sendCommandFeedback = world.getGameRuleValue(GameRule.SEND_COMMAND_FEEDBACK);
+        if (sendCommandFeedback) {
+            world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, false);
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+            world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, true);
+            return;
+        }
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+    }
+
     public static String format(String str) {
         return ChatColor.translateAlternateColorCodes('&', str);
     }
 
-    public static void wait(int ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
     public void reload() {
+        reloadConfig();
+
         messageType = getConfig().getString("afk.afk-messages.message-type");
         rewardTitle = getConfig().getString("afk.afk-messages.reward-give-title");
         rewardSubtitle = getConfig().getString("afk.afk-messages.reward-give-subtitle");
         rewardActionBar = getConfig().getString("afk.afk-messages.reward-give-actionbar");
         rewardMessage = getConfig().getString("afk.afk-messages.reward-give-message");
+        rewardTimePassing = getConfig().getString("afk.afk-messages.reward-time-passing");
 
         afkRegion = getConfig().getString("afk.afk-other-things.afk-region");
-        rewardTime = getConfig().getLong("afk.afk-other-things.afk-reward-time");
+        rewardTime = getConfig().getLong("afk.afk-other-things.afk-reward-time")+1;
         commandRewards = getConfig().getStringList("afk.afk-other-things.afk-command-rewards");
-
-        reloadConfig();
     }
 
     private Set<Player> playersInRegion = new HashSet<>();
@@ -153,13 +166,24 @@ public final class Main extends JavaPlugin implements Listener {
         RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(player.getWorld()));
         Location location = player.getLocation();
         ApplicableRegionSet set = regionManager.getApplicableRegions(BlockVector3.at(location.getX(), location.getY(), location.getZ()));
+
+        boolean isInAfkRegion = false;
+
         for (ProtectedRegion region : set) {
             if (region.getId().equalsIgnoreCase(afkRegion)) {
-                if (!afkPlayers.containsKey(player.getUniqueId())) {
-                    afkPlayers.put(player.getUniqueId(), System.currentTimeMillis() + rewardTime * 1000);
-                }
-            } else {
+                isInAfkRegion = true;
+                break;
+            }
+        }
+
+        if (isInAfkRegion) {
+            if (!afkPlayers.containsKey(player.getUniqueId())) {
+                afkPlayers.put(player.getUniqueId(), System.currentTimeMillis() + rewardTime * 1000);
+            }
+        } else {
+            if (afkPlayers.containsKey(player.getUniqueId())) {
                 afkPlayers.remove(player.getUniqueId());
+
             }
         }
     }

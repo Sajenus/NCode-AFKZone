@@ -4,3 +4,9 @@ main: me.sajen.afkzone.Main
 api-version: '1.17'
 author: Sajen
 depend: [WorldGuard]
+commands:
+  afkzone:
+    permission: ncode.afkzone.reload
+permissions:
+  ncode.afkzone.reload:
+    default: op
