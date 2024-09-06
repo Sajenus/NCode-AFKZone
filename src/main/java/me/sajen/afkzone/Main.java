@@ -65,11 +65,11 @@ public final class Main extends JavaPlugin implements Listener {
                     Player player = getServer().getPlayer(data.getKey());
                     if (player == null) {
                         afkPlayers.remove(data.getKey());
+                        return;
                     }
 
                     long secondsRemain = (data.getValue() - System.currentTimeMillis()) / 1000;
                     if (secondsRemain > 0) {
-                        // DODAJ COLOR CODE
                         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(format(rewardTimePassing.replace("{0}", String.valueOf(secondsRemain)))));
                     } else {
                         for(String command : commandRewards) {
@@ -183,7 +183,6 @@ public final class Main extends JavaPlugin implements Listener {
         } else {
             if (afkPlayers.containsKey(player.getUniqueId())) {
                 afkPlayers.remove(player.getUniqueId());
-
             }
         }
     }
